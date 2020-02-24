@@ -1,8 +1,7 @@
-var rq = require('sync-request');
 var mongoclient = require('mongodb').MongoClient;
+var intra = require('./request_intra').intraControler;
 var dbb;
-var token;
-var dbclose;
+var intra;
 var urli = "mongodb+srv://gufortel:admin@guforteltest-7hhbj.gcp.mongodb.net/test?retryWrites=true&w=majority"
 
 function mongo_connect() {
@@ -11,41 +10,23 @@ function mongo_connect() {
             console.log(err);
         }
         console.log("connected");
-        try{
-            dbb = dbe.db("user");
-            dbclose = dbe;
-            var obj = {name: "test", address: "test", "test": "lol"};
-        }catch(e){
-            throw e;
-        }
+        dbb = dbe.db("user");
         list_user();
     });
 }
 async function app() {
-    token = connexion();
+    intra = new intra();
     mongo_connect();
 }
 
-function connexion() {
-    var request = rq("POST", "https://api.intra.42.fr/oauth/token", {
-        json:{
-            "grant_type":"client_credentials",
-            "client_id":"a240d44cba74426f9ee83c9c3271e985740075e01ceee55e007550a46badaa3d",
-            "client_secret":"0644c6df34f448a0b0c50a539716b81b7fd491afcf6314579b6d99101bddfe46"
-        }
-    });
-    var body = JSON.parse(request.getBody('utf8'));
-    var access_token = body.access_token;
-    return(access_token);
-}
-
 async function list_user() {
-    var i = 0;
+    var i = 1;
     while(1) {
-        var json = await request_intra("https://api.intra.42.fr/v2/campus/1/users" + "?page[number]=" + i).catch(function(error) {
+        var json = await intra.request_intra("https://api.intra.42.fr/v2/campus/1/users" + "?page[size]=100&page[number]=" + i).catch(function(error) {
             console.log(error);
             process.exit(0);
         });
+        console.log(json[0]);
         for (let page = 0; page < json.length; page++) {
             const user = json[page].url;
             if (await save_user(user) == -1){
@@ -58,49 +39,49 @@ async function list_user() {
 }
 
 async function save_user(url) {
-    var json = await request_intra(url).catch(function (error) {
-        console.log(error);
+    var json = await intra.request_intra(url).catch(function (error) {
+        if (error.statusCode !== 404)
+            console.log(error);
+        return(0);
     });
-    if (!(json) || json.pool_year != "2019" || json.pool_year != "2018" || json.pool_year != "2017")
+    console.log(json.id, json.login, json.pool_year);
+    if (!(json) || (json.pool_year != "2020" && json.pool_year != "2019" && json.pool_year != "2018" && json.pool_year != "2017"))
         return(0);
     if (json.pool_year == "2016")
         return(-1);
-    console.log(json.id, json.login);
+    console.log("-----Save");
     dbb.collection('user').updateOne({"id":json.id}, {$set: json}, {upsert: true}, function(err, res) {
         if (err)
             throw err;
     });
+    var tabPositions = await takePositions(json.id);
+    var j = 0;
+    while (tabPositions[j]){
+        dbb.collection('positions').updateOne({"id": tabPositions[j].id}, {$set: {id: tabPositions[j].id, positions: tabPositions[j]}}, {upsert: true}, function(err, res) {
+            if (err)
+                throw err;
+        });
+        j++;
+    }
     return(0);
 }
 
-async function request_intra(path) {
-    try{
-        var request = rq("GET", path, {
-            headers:{
-                'Authorization': "Bearer " + token
-            }
+async function takePositions(id) {
+    var i = 1;
+	var tab = [];
+	while(1){
+        var json = await intra.request_intra("https://api.intra.42.fr/v2/users/" + id + "/locations" + "?page[size]=100&page[number]=" + i).catch(function (e) {
+            console.log(e);
+            return(tab);
         });
-    }catch(e){
-        return(new Promise((resolve, reject) => (reject(e))));
-    }
-    if (request.statusCode == 429){
-        //console.log(request.headers);
-        console.log(request.headers['retry-after'] * 1000);
-        await sleep(request.headers['retry-after'] * 1000);
-        return (request_intra(path));
-    }
-    if (request.statusCode == 401){
-        token = connexion();
-        return(request_intra(path));
-    }
-    //console.log(JSON.parse(request.statusCode));
-    //console.log(JSON.parse(request.getBody()));
-    return(new Promise(resolve => (resolve(JSON.parse(request.getBody())))));
+        if (json.length == 0){
+            console.log(tab.length);
+            return(tab);
+        }
+        console.log(json[json.length - 1].end_at);
+        tab = tab.concat(json);
+		i++;
+	}
 }
 
-function sleep(ms){
-    return new Promise(resolve=>{
-        setTimeout(resolve,ms)
-    })
-}
 app();
