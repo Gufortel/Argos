@@ -32,11 +32,11 @@ class intraRq {
 		if (request.statusCode == 429){
 			console.log(request.headers['retry-after'] / 60 + "Min");
 			await sleep(request.headers['retry-after'] * 1000);
-			return (request_intra(path, this.token));
+			return (this.request_intra(path, this.token));
 		}
 		if (request.statusCode == 401){
 			this.connexion();
-			return(request_intra(path, this.token));
+			return(this.request_intra(path, this.token));
 		}
 		return(new Promise(resolve => (resolve(JSON.parse(request.getBody())))));
 	}

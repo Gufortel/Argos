@@ -49,17 +49,17 @@ async function save_user(url) {
         return(0);
     if (json.pool_year == "2016")
         return(-1);
-    console.log("-----Save");
+    //console.log("-----Save");
     dbb.collection('user').updateOne({"id":json.id}, {$set: json}, {upsert: true}, function(err, res) {
         if (err)
-            throw err;
+            console.log(err);
     });
     var tabPositions = await takePositions(json.id);
     var j = 0;
     while (tabPositions[j]){
         dbb.collection('positions').updateOne({"id": tabPositions[j].id}, {$set: {id: tabPositions[j].id, positions: tabPositions[j]}}, {upsert: true}, function(err, res) {
             if (err)
-                throw err;
+                console.log(err);
         });
         j++;
     }
@@ -75,10 +75,8 @@ async function takePositions(id) {
             return(tab);
         });
         if (json.length == 0){
-            console.log(tab.length);
             return(tab);
         }
-        console.log(json[json.length - 1].end_at);
         tab = tab.concat(json);
 		i++;
 	}
