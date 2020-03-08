@@ -1,0 +1,24 @@
+{
+  "name": "project_argos",
+  "version": "1.0.0",
+  "description": "un simple test",
+  "main": "app.js",
+  "dependencies": {
+    "sync-request": "^6.1.0",
+    "mongodb": "^3.5.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gufortel/Argos.git"
+  },
+  "author": "guf",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Gufortel/Argos/issues"
+  },
+  "homepage": "https://github.com/Gufortel/Argos#readme"
+}
