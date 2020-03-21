@@ -7,7 +7,7 @@ var urli = "mongodb+srv://gufortel:admin@guforteltest-7hhbj.gcp.mongodb.net/test
 function mongo_connect() {
     mongoclient.connect(urli, { useUnifiedTopology: true }, function(err, dbe) {
         if (err){
-            console.log("error db: " + err);
+            console.log("error db : " + err);
         }
         console.log("connected");
         dbb = dbe.db("user");
