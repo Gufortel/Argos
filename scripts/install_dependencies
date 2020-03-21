@@ -1,3 +1,5 @@
 #!/bin/bash
-apt-get install -y httpd
+cd /var/api
+apt-get install -y nodejs
+npm install
 
