@@ -26,7 +26,7 @@ async function list_user() {
             console.log(error);
             process.exit(0);
         });
-        console.log(json[0]);
+        console.log("page:", i);
         for (let page = 0; page < json.length; page++) {
             const user = json[page].url;
             if (await save_user(user) == -1){
